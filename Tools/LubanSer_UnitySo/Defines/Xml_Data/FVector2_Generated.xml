@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<module xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <bean name="FVector2" valueType="0">
+    <var name="x" type="FP" />
+    <var name="y" type="FP" />
+  </bean>
+</module>

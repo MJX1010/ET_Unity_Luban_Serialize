@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <Nullable>enable</Nullable>
+        <LangVersion>12</LangVersion>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <DevelopmentDependency>true</DevelopmentDependency>
+        <IncludeSymbols>false</IncludeSymbols>
+        <NoWarn>1701;1702;RS2008</NoWarn>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <OutputPath>bin\Release\</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <OutputPath>bin\Debug\</OutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="../Analyzer/Extension/*.cs">
+            <Link>Extension\%(RecursiveDir)%(FileName)%(Extension)</Link>
+        </Compile>
+        <Compile Include="../Analyzer/Config/Definition.cs" />
+        <Compile Include="../Analyzer/Config/AnalyzeAssembly.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.9.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <!--自定义拷贝-->
+    <PropertyGroup>
+        <CustomCopyPath>..\..\Unity\Assets\Plugins\Editor\</CustomCopyPath> <!-- 自定义目标目录 -->
+    </PropertyGroup>
+    <Target Name="CopyDllToCustomDirectory" AfterTargets="Build">
+        <!-- 创建目标目录 -->
+        <MakeDir Directories="$(CustomCopyPath)" Condition="!Exists('$(CustomCopyPath)')" />
+        <!-- 拷贝输出的 DLL 和 PDB 文件 -->
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll;$(OutputPath)$(AssemblyName).pdb"
+              DestinationFolder="$(CustomCopyPath)" />
+    </Target>
+
+</Project>

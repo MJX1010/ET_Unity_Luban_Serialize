@@ -1,0 +1,50 @@
+[
+  {
+    "guid": 0,
+    "config": {
+      "move1": {
+        "startSpd": {
+          "m_rawValue": 0
+        },
+        "spdRange": {
+          "x": {
+            "m_rawValue": 0
+          },
+          "y": {
+            "m_rawValue": 0
+          }
+        },
+        "acce": {
+          "m_rawValue": 0
+        },
+        "spdCurve": {
+          "value": {
+            "m_rawValue": 0
+          },
+          "name": ""
+        },
+        "spdCurveTime": {
+          "m_rawValue": 0
+        }
+      },
+      "dmg2": {
+        "dmgMulti": {
+          "m_rawValue": 0
+        },
+        "dmgSource": 0,
+        "dmgElement": 0
+      },
+      "shootStyle3": {
+        "arrange": 0,
+        "spread": {
+          "x": {
+            "m_rawValue": 0
+          },
+          "y": {
+            "m_rawValue": 0
+          }
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,8 @@
+<module>
+<bean name="BulletConfigSo">
+    <var name="guid" type="long"/>
+    <var name="config" type="BulletConfig"/>
+</bean>
+<!-- 泛型类型参数: BulletConfig -->
+<table name="TbBulletConfigSo" value="BulletConfigSo" input="Config/Editor/Bullet1"/>
+</module>

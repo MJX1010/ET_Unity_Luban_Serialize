@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<module xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <bean name="BulletConfig2" valueType="0">
+    <var name="move1" type="MoveConfig" />
+  </bean>
+</module>
