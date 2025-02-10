@@ -4,6 +4,9 @@ namespace ET.Client
 {
 	/// <summary>
 	/// 管理Scene上的UI
+	///
+	/// 这里是UIComponent的具体实现
+	/// 定义在 ModelView/Client/Module/UI/UIComponent.cs
 	/// </summary>
 	[EntitySystemOf(typeof(UIComponent))]
 	[FriendOf(typeof(UIComponent))]

@@ -14,7 +14,7 @@ namespace ET.Generator;
 /// </summary>
 [Obsolete("弃用")]
 [Generator(LanguageNames.CSharp)]
-public class LubanSchemaEditorGenerator : ISourceGenerator
+public class LubanSerEditorGenerator : ISourceGenerator
 {
     public void Initialize(GeneratorInitializationContext context)
     {

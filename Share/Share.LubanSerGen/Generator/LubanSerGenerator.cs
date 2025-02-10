@@ -14,7 +14,7 @@ namespace ET.Generator;
 /// 解析[LubanSer], 生成Luban解析数据和代码的 Xml文件，然后执行Luabn.dll生成CSharp 和 表格数据
 /// </summary>
 [Generator(LanguageNames.CSharp)]
-public class LubanSchemaGenerator : ISourceGenerator {
+public class LubanSerGenerator : ISourceGenerator {
     public void Initialize(GeneratorInitializationContext context) {
         //context.RegisterForSyntaxNotifications((() => LubanSerSyntaxContextReceiver.Create()));
         context.RegisterForSyntaxNotifications(() => new LubanSerSyntaxCompositeReceiver(
@@ -35,6 +35,7 @@ public class LubanSchemaGenerator : ISourceGenerator {
             TryInitEnv(context);
 
             //AnalyzerReceiver_LubanSerEditor(receivers, context);
+			//执行先后顺序要求
             AnalyzerReceiver_LubanSer(receivers, context);
             AnalyzerReceiver_LubanSerTable(receivers, context);
 
@@ -114,6 +115,7 @@ public class LubanSchemaGenerator : ISourceGenerator {
         this.isEnvInited = true;
         this.envInfo.PrintPaths(context);
         
+        //清理XML生成环境
         LubanSerUtils.ClearDirectory(envInfo.outputXmlForCodePath, context);
         this.outputXmlFileNames.Clear();
     }
