@@ -53,4 +53,9 @@ Publish/
 */TestResults/
 
 luban/
-Xml_Code/
+Tools/*/Defines/Xml_Code
+Tools/*/Defines/Xml_Data
+Tools/*/Generated/Code
+Tools/*/Generated/Data
+_Generated/
+_Generated.meta
