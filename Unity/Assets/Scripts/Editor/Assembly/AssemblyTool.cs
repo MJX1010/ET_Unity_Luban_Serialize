@@ -18,6 +18,10 @@ namespace ET
         /// </summary>
         public static readonly string[] DllNames = { "Unity.Hotfix", "Unity.HotfixView", "Unity.Model", "Unity.ModelView" };
 
+
+        public static event System.Action<object> etCompilationFinished;
+
+
         [InitializeOnLoadMethod]
         static void Initialize()
         {
@@ -34,6 +38,9 @@ namespace ET
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
             DoCompile();
+            
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+            etCompilationFinished?.Invoke(null);
         }
 
         /// <summary>

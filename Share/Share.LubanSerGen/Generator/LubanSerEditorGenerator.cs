@@ -30,8 +30,11 @@ public class LubanSerEditorGenerator : ISourceGenerator
             if (receiver.Candidates.Count == 0) {
                 return;
             }
-            
-            var envInfo = new EnvInfo();
+
+            var envInfo = new EnvInfo(context);
+            if (!envInfo.isValid()) {
+                return;
+            }
             envInfo.PrintPaths(context);
             
             var compilation = context.Compilation;

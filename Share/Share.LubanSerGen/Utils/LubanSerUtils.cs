@@ -10,11 +10,21 @@ namespace ET.Generator.Luban;
 
 public static class LubanSerUtils {
 
+    private static object _logToFileObj = new object();
+    public static void LogToFile(string message, string fileNameExt)
+    {
+        lock (_logToFileObj) {
+            string logFilePath = Path.Combine(Path.GetTempPath(), $"share_lubanser_log_{fileNameExt}.txt");
+            File.AppendAllText(logFilePath, $"{DateTime.Now}: {message}{Environment.NewLine}");
+        }
+    }
+    
     public static void LogInContext(GeneratorExecutionContext context, string msg,string id = "000", string title = "LubanSer",  string category = "Usage",  DiagnosticSeverity logLevel = DiagnosticSeverity.Info) {
+        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
         context.ReportDiagnostic(Diagnostic.Create(new DiagnosticDescriptor(
                 $"LUBAN_{id}", 
                 !string.IsNullOrEmpty(title) ? title : "LubanSer Generator executed",
-                msg, 
+                $"{timestamp}: {msg}", 
                 !string.IsNullOrEmpty(category) ? category : "Usage",
                 logLevel,
                 true),

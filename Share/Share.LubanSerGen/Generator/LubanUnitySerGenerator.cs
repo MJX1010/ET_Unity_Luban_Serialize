@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Text;
+using ET.Generator.Luban;
 using Microsoft.CodeAnalysis;
 
 namespace ET.Generator;
@@ -21,8 +22,11 @@ public class LubanUnitySerGenerator : ISourceGenerator {
         if (receiver.BeanTypeSymbols.Count == 0) {
             return;
         }
-        
-        var envInfo = new EnvInfo();
+
+        var envInfo = new EnvInfo(context);
+        if (!envInfo.isValid()) {
+            return;
+        }
         envInfo.PrintPaths(context);
         
         var sourceBuilder = new StringBuilder();

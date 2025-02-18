@@ -27,9 +27,11 @@ namespace ET.Client
                 self.account.GetComponent<InputField>().text,
                 self.password.GetComponent<InputField>().text).Coroutine();
             
+#if LUBAN_SER
             //测试LubanSerTable
             TEST_LUBAN_SER.TestLoadLubanSerTable testLoadLubanSer = new();
             testLoadLubanSer.LoadLubanTables();
+#endif
         }
     }
 }

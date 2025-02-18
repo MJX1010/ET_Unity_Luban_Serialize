@@ -11,6 +11,7 @@ namespace TEST_LUBAN_SER
     [EnableClass]
     public class TestLoadLubanSerTable
     {
+#if LUBAN_SER
         public cfg.Tables LubanTables => _lubanTables;
         private cfg.Tables _lubanTables = null;
 
@@ -27,6 +28,7 @@ namespace TEST_LUBAN_SER
             }
             return null;
         }
+#endif
     }
 
 }

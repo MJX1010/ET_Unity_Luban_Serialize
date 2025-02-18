@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Xml.Serialization;
 using ET.Generator.Luban;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Share.LubanSerGen.Utils;
 
 namespace ET.Generator;
 
@@ -105,11 +110,172 @@ public class BeanFieldInfo
 }
 
 public class EnvInfo {
-    //环境设置
-    public string projectDir => PathUtils.GetFullProjectDir(string.Empty);
+    private EnvInfo() { }
     
-    public string unityProjectDir => Path.GetFullPath(Path.Combine(projectDir, "./Unity/"));
-    public string unityAssetsProjectDir => Path.Combine(unityProjectDir, "./Unity/Assets/");
+    public static readonly string ETUnityLubanTempDirName = "ET_Unity_LubanSer_Temp";
+    private static string _unityProjectDirectory = string.Empty;
+    private GeneratorExecutionContext _context;
+    private System.Diagnostics.Process _currentProcess;
+    public EnvInfo(GeneratorExecutionContext context) {
+        _context = context;
+        SetUnityProjectDirectory(context);
+        
+        if (!string.IsNullOrEmpty(this.projectDir)) {
+            if (!Directory.Exists(this.outputXmlForCodePath)) {
+                Directory.CreateDirectory(this.outputXmlForCodePath);
+            }
+            if (!Directory.Exists(this.outputXmlForDataPath)) {
+                Directory.CreateDirectory(this.outputXmlForDataPath);
+            }
+            if (!Directory.Exists(this.lubanCodeCSharpOutPath)) {
+                Directory.CreateDirectory(this.lubanCodeCSharpOutPath);
+            }
+            if (!Directory.Exists(this.lubanCodeJsonOutPath)) {
+                Directory.CreateDirectory(this.lubanCodeJsonOutPath);
+            }
+            if (!Directory.Exists(this.lubanDataBytesOutPath)) {
+                Directory.CreateDirectory(this.lubanDataBytesOutPath);
+            }
+            if (!Directory.Exists(this.lubanDataJsonOutPath)) {
+                Directory.CreateDirectory(this.lubanDataJsonOutPath);
+            }
+        }
+    }
+    
+    public void SetUnityProjectDirectory(GeneratorExecutionContext context) {
+        _currentProcess = System.Diagnostics.Process.GetCurrentProcess();
+        LubanSerUtils.LogInContext(context, $"CurrentProcess: P:{_currentProcess.Id} {_currentProcess.ProcessName}", "003");
+        LubanSerUtils.LogToFile($"CurrentProcess: P:{_currentProcess.Id} {_currentProcess.ProcessName}", $"from_unity");
+        
+        string currentAssemblyName = context.Compilation.Assembly.Identity.Name;
+        LubanSerUtils.LogInContext(context, $"CurrentAssemblyName: {currentAssemblyName}", "003");
+        LubanSerUtils.LogToFile($"CurrentAssemblyName: {currentAssemblyName}", $"from_unity");
+        
+        if (string.IsNullOrEmpty(_unityProjectDirectory)) {
+            GetUnityProjectDirFromCompile(context);
+        }
+        
+        if (string.IsNullOrEmpty(_unityProjectDirectory)) {
+            //GetUnityProjectDirFromEnvVar(context);
+        }
+        
+        if (string.IsNullOrEmpty(_unityProjectDirectory)) {
+            GetUnityProjectDirFromAddFiles(context);
+        }
+        
+        if (string.IsNullOrEmpty(_unityProjectDirectory)) {
+            //GetUnityProjectDirFromTempFile(context);
+        }
+    }
+
+    private void GetUnityProjectDirFromEnvVar(GeneratorExecutionContext context) {
+        var enviromentDir = Environment.GetEnvironmentVariable("UNITY_PROJECT_DIR");
+        if (!string.IsNullOrEmpty(enviromentDir)) {
+            _unityProjectDirectory = enviromentDir;
+            if (!string.IsNullOrEmpty(_unityProjectDirectory)) {
+                LubanSerUtils.LogInContext(context, $"Unity Project Directory From Env: {_unityProjectDirectory}", "003");
+                LubanSerUtils.LogToFile($"Unity Project Directory From Env: {_unityProjectDirectory} P:{_currentProcess.Id} {_currentProcess.ProcessName}", $"from_unity");
+            }
+        }
+    }
+
+    private void GetUnityProjectDirFromTempFile(GeneratorExecutionContext context) {
+        string tempDir = Path.GetTempPath(); //win: C:\Users\(用户名)\AppData\Local\Temp
+        var unityProcessArray = System.Diagnostics.Process.GetProcessesByName("Unity");
+        if (unityProcessArray != null && unityProcessArray.Length > 0) {
+            for (int i = 0; i < unityProcessArray.Length; i++) {
+                var unityProcess = unityProcessArray[i];
+                /*
+                try {
+                    string projectDir = unityProcess.StartInfo.EnvironmentVariables["UNITY_PROJECT_DIR"];
+                    LubanSerUtils.LogToFile($"unity process: {unityProcess.Id},  EnviromentDir: {projectDir}", $"from_unity");
+                }
+                catch (Exception e) {
+                    LubanSerUtils.LogToFile($"unity process: {unityProcess.Id},  failed to get EnviromentDir", $"from_unity");
+                }
+                */
+
+                string tempPath = Path.Combine(tempDir, $"{ETUnityLubanTempDirName}/unity_project_mapping_{unityProcess.Id}.txt");
+                if (File.Exists(tempPath)) {
+                    try {
+                        string content = File.ReadAllText(tempPath);
+                        if (!string.IsNullOrEmpty(content) && Directory.Exists(content)) {
+                            LubanSerUtils.LogToFile($"Unity Project Directory From TempFile: unity process: {unityProcess.Id},  read path from txt: {content}", $"from_unity");
+                            _unityProjectDirectory = content;
+                            break;
+                        }
+                    }
+                    catch (Exception ex) {
+                        LubanSerUtils.LogToFile($"Unity Project Directory From TempFile: unity process: {unityProcess.Id},  failed to read path from txt", $"from_unity");
+                    }
+                }
+            }
+        }
+    }
+
+    private void GetUnityProjectDirFromCompile(GeneratorExecutionContext context) {
+        var unityProjectPathClass = context.Compilation.SyntaxTrees
+                .SelectMany(tree => tree.GetRoot().DescendantNodes())
+                .OfType<ClassDeclarationSyntax>()
+                .FirstOrDefault(cls => cls.Identifier.Text == "UnityProjectPath");
+
+        if (unityProjectPathClass != null)
+        {
+            var field = unityProjectPathClass.Members
+                    .OfType<FieldDeclarationSyntax>()
+                    .FirstOrDefault(f => f.Declaration.Variables.Any(v => v.Identifier.Text == "Path"));
+
+            if (field != null)
+            {
+                _unityProjectDirectory = field.Declaration.Variables.First().Initializer.Value.ToString().Trim('"');
+                LubanSerUtils.LogInContext(context, $"Unity Project Directory From SG: {_unityProjectDirectory}", "003");
+                LubanSerUtils.LogToFile($"Unity Project Directory From SG: {_unityProjectDirectory}", $"from_unity");
+            }
+        }
+        else {
+            //LubanSerUtils.LogInContext(context, $"Not Found Unity Project Directory From SG", "003");
+            //LubanSerUtils.LogToFile($"Not Found Unity Project Directory From SG", $"from_unity");
+        }
+    }
+    
+    private void GetUnityProjectDirFromAddFiles(GeneratorExecutionContext context) {
+        string unityProjectDirectoryTemp = string.Empty;
+        foreach (var additionalFile in context.AdditionalFiles) {
+            var filePath = additionalFile.Path;
+            if (!string.IsNullOrEmpty(filePath) && filePath.EndsWith("_UnityProjectDirectory")) {
+                unityProjectDirectoryTemp = filePath.Replace("_UnityProjectDirectory", "");
+                break;
+            }
+        }
+        if (!string.IsNullOrEmpty(unityProjectDirectoryTemp)) {
+            _unityProjectDirectory = unityProjectDirectoryTemp;
+            LubanSerUtils.LogInContext(context, $"Unity Project Directory From AddFile: {_unityProjectDirectory}", "003");
+            LubanSerUtils.LogToFile($"Unity Project Directory From AddFile: {_unityProjectDirectory}", $"from_et_rider");
+        }
+    }
+
+    public string projectDir {
+        get {
+            
+            //return "./";
+            //return PathUtils.GetFullProjectDir(string.Empty); //这里是获取当前代码所在目录，会在编译Dll时生成到Dll中作为常量
+            if(string.IsNullOrEmpty(_unityProjectDirectory)) {
+                SetUnityProjectDirectory(_context);
+            }
+            if (!string.IsNullOrEmpty(_unityProjectDirectory)) {
+                var path = Path.Combine(_unityProjectDirectory, "../");
+                if (Directory.Exists(path)) {
+                    return path;
+                }
+            }
+            return string.Empty;
+        }
+    }
+
+    public bool isValid() => !string.IsNullOrEmpty(this.projectDir);
+
+    public string unityProjectRootDir => Path.GetFullPath(Path.Combine(projectDir, "./Unity/"));
+    public string unityAssetsProjectDir => Path.Combine(unityProjectRootDir, "./Unity/Assets/");
 
     public string lubanPartyToUnityRootRelativeDir = "../../Unity/";
     public string lubanPartyToUnityAssetsRelativeDir = "../../Unity/Assets/";

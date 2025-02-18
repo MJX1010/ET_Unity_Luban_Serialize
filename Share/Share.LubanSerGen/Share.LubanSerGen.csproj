@@ -37,16 +37,18 @@
         </PackageReference>
     </ItemGroup>
 
-    <!--自定义拷贝-->
+    <!--自定义拷贝, 开发时开启步骤一和二 -->
     <PropertyGroup>
         <CustomCopyPath>..\..\Unity\Assets\Plugins\Editor\</CustomCopyPath> <!-- 自定义目标目录 -->
     </PropertyGroup>
     <Target Name="CopyDllToCustomDirectory" AfterTargets="Build">
-        <!-- 创建目标目录 -->
+        <!-- 一、创建目标目录  -->
         <MakeDir Directories="$(CustomCopyPath)" Condition="!Exists('$(CustomCopyPath)')" />
-        <!-- 拷贝输出的 DLL 和 PDB 文件 -->
+        
+        <!-- 二、拷贝输出的 DLL 和 PDB 文件 -->
         <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll;$(OutputPath)$(AssemblyName).pdb"
               DestinationFolder="$(CustomCopyPath)" />
+        
     </Target>
 
 </Project>

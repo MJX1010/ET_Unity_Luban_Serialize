@@ -1,11 +1,17 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Xml;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEngine;
 
 namespace ET
 {
+    /// <summary>
+    /// 用于GlobalConfig配置中切换Client / Server / Client_Server 不同模式
+    /// 结合AssemblyTool.cs - RefreshCodeMode() - EnableUnityClient() - DisableAsmdef() / EnableAsmdef()
+    /// </summary>
     public class OnGenerateCSProjectProcessor: AssetPostprocessor
     {
         /// <summary>
@@ -36,6 +42,14 @@ namespace ET
             if (path.EndsWith("Unity.ModelView.csproj") || path.EndsWith("Unity.HotfixView.csproj"))
             {
                 return AddCopyAfterBuild(GenerateCustomProject(content));
+            }
+            
+            if (path.EndsWith("Assembly-CSharp-firstpass.csproj") || 
+                path.EndsWith("Assembly-CSharp.csproj") ||
+                path.EndsWith("Assembly-CSharp-Editor.csproj") ||
+                path.EndsWith("Assembly-CSharp-Editor-firstpass.csproj"))
+            {
+                return AddUnityProjectDirectory(content);
             }
 
             return content;
@@ -104,6 +118,9 @@ namespace ET
                 target.SetAttribute("Name", "AfterBuild");
                 rootNode.AppendChild(target);
             }
+            
+            //添加UnityProjectDirectory，提供给SourceGenerator获取Unity项目路径
+            AddUnityProjectDirectory(newDoc, rootNode);
 
             using StringWriter sw = new();
             using XmlTextWriter tx = new(sw);
@@ -133,6 +150,47 @@ namespace ET
         static string HideCSProject(string content, string projectName)
         {
             return Regex.Replace(content, $"Project.*{projectName}.*\nEndProject", string.Empty);
+        }
+
+        static string AddUnityProjectDirectory(string content) {
+            XmlDocument doc = new();
+            doc.LoadXml(content);
+            var newDoc = doc.Clone() as XmlDocument;
+            var rootNode = newDoc.GetElementsByTagName("Project")[0];
+            
+            AddUnityProjectDirectory(newDoc, rootNode);
+            
+            using StringWriter sw = new();
+            using XmlTextWriter tx = new(sw);
+            tx.Formatting = Formatting.Indented;
+            newDoc.WriteTo(tx);
+            tx.Flush();
+            return sw.GetStringBuilder().ToString();
+        }
+
+        static void AddUnityProjectDirectory(XmlDocument newDoc, XmlNode rootNode) {
+            {
+                var propertyGroup = newDoc.CreateElement("PropertyGroup", newDoc.DocumentElement.NamespaceURI);
+                var projectDir = newDoc.CreateElement("UnityProjectDirectory", newDoc.DocumentElement.NamespaceURI);
+                projectDir.InnerText = @"$([System.IO.Path]::GetDirectoryName($(MSBuildThisFileDirectory)))";
+                propertyGroup.AppendChild(projectDir);
+                rootNode.AppendChild(propertyGroup);
+
+                var target = newDoc.CreateElement("Target", newDoc.DocumentElement.NamespaceURI);
+                target.SetAttribute("Name", "PrintUnityProjectDirectory");
+                target.SetAttribute("BeforeTargets", "Build");
+                var projectDirPrintMsg = newDoc.CreateElement("Message", newDoc.DocumentElement.NamespaceURI);
+                projectDirPrintMsg.SetAttribute("Importance", "High");
+                projectDirPrintMsg.SetAttribute("Text", @"Unity Project Directory: $(UnityProjectDirectory)");
+                target.AppendChild(projectDirPrintMsg);
+                rootNode.AppendChild(target);
+
+                var itemGroup = newDoc.CreateElement("ItemGroup", newDoc.DocumentElement.NamespaceURI);
+                var additionalFiles = newDoc.CreateElement("AdditionalFiles", newDoc.DocumentElement.NamespaceURI);
+                additionalFiles.SetAttribute("Include", "$(UnityProjectDirectory)_UnityProjectDirectory");
+                itemGroup.AppendChild(additionalFiles);
+                rootNode.AppendChild(itemGroup);
+            }
         }
     }
 }

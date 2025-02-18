@@ -1,4 +1,5 @@
 using ET;
+using UnityEngine;
 
 namespace TEST_LUBAN_SER {
     [LubanSer]
@@ -44,6 +45,16 @@ namespace TEST_LUBAN_SER {
         public MoveConfig move1;
         public DmgConfig dmg2;
         public ShootStyle shootStyle3;
+        
+        //[LubanSerIgnore]
+        //public GameObject bulletPrefab;
+        //[LubanSerUnityObject(type = typeof(GameObject))]
+        //public string bulletPrefabPath;
+        
+        //[LubanSerIgnore]
+        //public BulletConfigSo2 config;
+        //[LubanSerLubanSo]
+        //public string configGuid;
     }
     
     [LubanSer]
